@@ -58,10 +58,7 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 
 		client, err := getClient(version, hostname, token, insecure)
 		if err != nil {
-			return nil, []diag.Diagnostic{{
-				Severity: diag.Error,
-				Summary:  err.Error(),
-			}}
+			return nil, diag.Errorf("%s", err.Error())
 		}
 
 		return client, nil
