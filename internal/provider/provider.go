@@ -26,6 +26,26 @@ func init() {
 func New(version string) func() *schema.Provider {
 	return func() *schema.Provider {
 		p := &schema.Provider{
+			Schema: map[string]*schema.Schema{
+				"hostname": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Description: descriptions["hostname"],
+				},
+
+				"token": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Description: descriptions["token"],
+				},
+
+				"ssl_skip_verify": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Description: descriptions["ssl_skip_verify"],
+				},
+			},
+
 			DataSourcesMap: map[string]*schema.Resource{
 				"scaffolding_data_source": dataSourceScaffolding(),
 			},
@@ -54,4 +74,11 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 
 		return &apiClient{}, nil
 	}
+}
+
+var descriptions = map[string]string{
+	"hostname": "The Terraform Enterprise hostname to connect to. Defaults to app.terraform.io.",
+	"token": "The token used to authenticate with Terraform Enterprise. We recommend omitting\n" +
+		"the token which can be set as credentials in the CLI config file.",
+	"ssl_skip_verify": "Whether or not to skip certificate verifications.",
 }
