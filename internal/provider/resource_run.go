@@ -18,7 +18,6 @@ func resourceRun() *schema.Resource {
 
 		CreateContext: resourceRunCreate,
 		ReadContext:   resourceRunRead,
-		UpdateContext: resourceRunUpdate,
 		DeleteContext: resourceRunDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -59,11 +58,6 @@ func resourceRunRead(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	return nil
-}
-
-func resourceRunUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	// We have no mutable fields, this should never be called.
-	return diag.Errorf("update should never be called")
 }
 
 func resourceRunDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
