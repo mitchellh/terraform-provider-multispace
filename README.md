@@ -6,9 +6,54 @@ pure Terraform. The goal of the provider is to make it easy to create
 and destroy full trees of Terraform workspaces used to represent a single
 environment.
 
+For more details on motivation, see the ["why?" section](#why).
+
 **Warning:** Despite my affiliation with HashiCorp, this is **NOT** an official
 HashiCorp project and is not supported by HashiCorp. This was created on
 my personal time for personal use cases.
+
+## Usage
+
+The example below cascades applies and destroys across multiple workspaces.
+
+The recommended usage includes pairing this with the
+[tfe provider](https://registry.terraform.io/providers/hashicorp/tfe/latest).
+The `tfe` provider is used to configure your workspaces, and the
+`multispace` provider is used to create a tree of workspaces that
+are initialized together.
+
+**Note on usage:** I usually only use this to manage the create/destroy
+lifecycle today. The steady-state modification workflow uses the standard
+Terraform Cloud VCS-driven workflows. This provider just helps me stand up
+my initial environments and subsequently tear them down.
+
+```terraform
+resource "multispace_run" "root" {
+  # Use string workspace names here and not data sources so that
+  # you can define the multispace runs before the workspace even exists.
+  workspace = "tfc"
+}
+
+resource "multispace_run" "physical" {
+  workspace = "k8s-physical"
+  depends_on = [multispace_run.root]
+}
+
+resource "multispace_run" "core" {
+  workspace = "k8s-core"
+  depends_on = [multispace_run.physical]
+}
+
+resource "multispace_run" "dns" {
+  workspace = "dns"
+  depends_on = [multispace_run.root]
+}
+
+resource "multispace_run" "ingress" {
+  workspace = "ingress"
+  depends_on = [multispace_run.core, multispace_run.dns]
+}
+```
 
 ## Why?
 
