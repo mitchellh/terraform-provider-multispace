@@ -40,7 +40,7 @@ jobs:
       run: |
         go build -v .
 
-  # run acceptance tests in a matrix with Terraform core versions
+  # run unit tests in a matrix with Terraform core versions
   test:
     name: Matrix Test
     needs: build
@@ -67,16 +67,11 @@ jobs:
       run: |
         go mod download
 
-    - name: TF acceptance tests
+    - name: TF unit tests
       timeout-minutes: 10
       env:
-        TF_ACC: "1"
+        # do NOT run acceptance tests, just unit.
+        TF_ACC: "0"
         TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
-
-        # Set whatever additional acceptance test env vars here. You can
-        # optionally use data from your repository secrets using the
-        # following syntax:
-        # SOME_VAR: ${{ secrets.SOME_VAR }}
-
       run: |
         go test -v -cover ./internal/provider/
