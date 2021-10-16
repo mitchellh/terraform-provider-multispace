@@ -11,16 +11,6 @@ func init() {
 	// Set descriptions to support markdown syntax, this will be used in document generation
 	// and the language server.
 	schema.DescriptionKind = schema.StringMarkdown
-
-	// Customize the content of descriptions when output. For example you can add defaults on
-	// to the exported descriptions if present.
-	// schema.SchemaDescriptionBuilder = func(s *schema.Schema) string {
-	// 	desc := s.Description
-	// 	if s.Default != nil {
-	// 		desc += fmt.Sprintf(" Defaults to `%v`.", s.Default)
-	// 	}
-	// 	return strings.TrimSpace(desc)
-	// }
 }
 
 func New(version string) func() *schema.Provider {
@@ -60,19 +50,24 @@ func New(version string) func() *schema.Provider {
 	}
 }
 
-type apiClient struct {
-	// Add whatever fields, client or connection info, etc. here
-	// you would need to setup to communicate with the upstream
-	// API.
-}
-
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	return func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		// Setup a User-Agent for your API client (replace the provider name for yours):
-		// userAgent := p.UserAgent("terraform-provider-scaffolding", version)
-		// TODO: myClient.UserAgent = userAgent
+	return func(
+		ctx context.Context,
+		d *schema.ResourceData,
+	) (interface{}, diag.Diagnostics) {
+		hostname := d.Get("hostname").(string)
+		token := d.Get("token").(string)
+		insecure := d.Get("ssl_skip_verify").(bool)
 
-		return &apiClient{}, nil
+		client, err := getClient(version, hostname, token, insecure)
+		if err != nil {
+			return nil, []diag.Diagnostic{{
+				Severity: diag.Error,
+				Summary:  err.Error(),
+			}}
+		}
+
+		return client, nil
 	}
 }
 
