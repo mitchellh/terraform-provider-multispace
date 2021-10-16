@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -14,18 +13,32 @@ func TestAccResourceRun(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceRun,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestMatchResourceAttr(
-						"multispace_run.foo", "sample_attribute", regexp.MustCompile("^ba")),
-				),
 			},
 		},
 	})
 }
 
 const testAccResourceRun = `
-resource "multispace_run" "foo" {
-  organization = "mitchellh-mail"
-  workspace    = "tfc"
+resource "multispace_run" "root" {
+  organization = "multispace-test"
+  workspace    = "root"
+}
+
+resource "multispace_run" "A" {
+  organization = "multispace-test"
+  workspace    = "A"
+  depends_on   = [multispace_run.root]
+}
+
+resource "multispace_run" "B" {
+  organization = "multispace-test"
+  workspace    = "B"
+  depends_on   = [multispace_run.A]
+}
+
+resource "multispace_run" "C" {
+  organization = "multispace-test"
+  workspace    = "C"
+  depends_on   = [multispace_run.A]
 }
 `

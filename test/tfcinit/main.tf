@@ -4,11 +4,6 @@ terraform {
       source  = "hashicorp/tfe"
       version = "~> 0.26.1"
     }
-
-    random = {
-      source = "hashicorp/random"
-      version = "3.1.0"
-    }
   }
 }
 
@@ -18,13 +13,9 @@ locals {
   workspaces = ["root", "A", "B", "C"]
 }
 
-resource "random_string" "random" {
-  length           = 8
-  special          = false
-}
-
 resource "tfe_organization" "org" {
-  name = "multispace-test-${random_string.random.string}"
+  name  = "multispace-test"
+  email = var.email
 }
 
 resource "tfe_oauth_client" "client" {
@@ -36,7 +27,7 @@ resource "tfe_oauth_client" "client" {
 }
 
 resource "tfe_workspace" "ws" {
-  for_each          = local.workspaces
+  for_each          = toset(local.workspaces)
   name              = each.value
   organization      = tfe_organization.org.name
   working_directory = "test/noop"

@@ -1,4 +1,9 @@
-variable "monorepo" {
+variable "email" {
+  type        = string
+  description = "Email used for Terraform Cloud."
+}
+
+variable "github_repo" {
   type        = string
   description = "Multispace provider repository. This must be forked."
   default     = "mitchellh/terraform-provider-multispace"
