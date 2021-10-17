@@ -34,6 +34,34 @@ func resourceRun() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
+
+			"retry": {
+				Description: runDescriptions["retry"],
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
+
+			"retry_attempts": {
+				Description: runDescriptions["retry_attempts"],
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Default:     3,
+			},
+
+			"retry_backoff_min": {
+				Description: runDescriptions["retry_backoff_min"],
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Default:     1,
+			},
+
+			"retry_backoff_max": {
+				Description: runDescriptions["retry_backoff_max"],
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Default:     30,
+			},
 		},
 	}
 }
@@ -77,6 +105,32 @@ func doRun(
 		if !destroy {
 			d.SetId(v)
 		}
+	}
+
+	// Get our retry information
+	retry := d.Get("retry").(bool)
+	retryMaxAttempts := d.Get("retry_attempts").(int)
+	retryBOMin := d.Get("retry_backoff_min").(int)
+	retryBOMax := d.Get("retry_backoff_max").(int)
+	retryCurAttempts := 0
+
+RETRY:
+	retryCurAttempts++
+	if retryCurAttempts > 1 {
+		// If we're retrying, then perform the backoff.
+		select {
+		case <-ctx.Done():
+			return diag.FromErr(ctx.Err())
+		case <-time.After(backoff(
+			float64(retryBOMin), float64(retryBOMax), retryCurAttempts)):
+		}
+	}
+	if retryCurAttempts > retryMaxAttempts {
+		return diag.Errorf(
+			"Maximum retry attempts %d reached. Please see the web UI "+
+				"to see any errors during plan or apply.",
+			retryMaxAttempts,
+		)
 	}
 
 	client := meta.(*tfe.Client)
@@ -126,6 +180,11 @@ func doRun(
 		// Clear the ID, we didn't create anything.
 		setId("")
 
+		if retry {
+			// Retry
+			goto RETRY
+		}
+
 		return diag.Errorf(
 			"Run %q errored during plan. Please open the web UI to view the error",
 			run.ID,
@@ -170,6 +229,11 @@ func doRun(
 		// Clear the ID, we didn't create anything.
 		setId("")
 
+		if retry {
+			// Retry
+			goto RETRY
+		}
+
 		return diag.Errorf(
 			"Run %q errored during apply. Please open the web UI to view the error",
 			run.ID,
@@ -192,4 +256,11 @@ func doRun(
 var runDescriptions = map[string]string{
 	"organization": "The name of the Terraform Cloud organization that owns the workspace.",
 	"workspace":    "The name of the Terraform Cloud workspace to execute.",
+	"retry":        "Whether or not to retry on plan or apply errors.",
+	"retry_attempts": "The number of retry attempts made for any errors during " +
+		"plan or apply. This applies to both creation and destruction.",
+	"retry_backoff_min": "The minimum seconds to wait between retry attempts.",
+	"retry_backoff_max": "The maximum seconds to wait between retry attempts. Retries " +
+		"are done using an exponential backoff, so this can be used to limit " +
+		"the maximum time between retries.",
 }

@@ -36,7 +36,8 @@ version **does not do this.**
 resource "multispace_run" "root" {
   # Use string workspace names here and not data sources so that
   # you can define the multispace runs before the workspace even exists.
-  workspace = "tfc"
+  organization = "my-org"
+  workspace    = "tfc"
 }
 
 resource "multispace_run" "physical" {
@@ -61,6 +62,22 @@ resource "multispace_run" "ingress" {
   organization = "my-org"
   workspace    = "ingress"
   depends_on   = [multispace_run.core, multispace_run.dns]
+}
+```
+
+## Example Usage: Run Retry
+
+Run retrying is enabled by default and no further configuration is required.
+Retrying causes `multispace_run` to retry if there is an error during the
+plan or apply. This can be customized using the `retry_*` fields.
+
+```hcl
+resource "multispace_run" "root" {
+  organization = "my-org"
+  workspace    = "tfc"
+
+  retry_attempts    = 3
+  retry_backoff_min = 15
 }
 ```
 

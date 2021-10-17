@@ -35,4 +35,5 @@ website/vendor
 *.winfile eol=crlf
 
 # Other
+terraform-provider-multispace
 test/tfcinit/terraform.tfvars
