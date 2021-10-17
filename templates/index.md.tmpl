@@ -8,10 +8,10 @@ description: |-
 # Multispace Provider
 
 The `multispace` Terraform provider implements resources to help work
-with multi-workspace workflows in Terraform Cloud (or Enterprise) with
-pure Terraform. The goal of the provider is to make it easy to create
-and destroy full trees of Terraform workspaces used to represent a single
-environment.
+with multi-workspace workflows in Terraform Cloud (or Enterprise).
+The goal of the provider is to make it easy to perform cascading
+creation/deletes in the proper order across a series of dependent
+Terraform workspaces.
 
 For more details on motivation, see the ["why?" section](#why).
 

@@ -7,18 +7,28 @@ description: |-
 
 # Resource: {{ .Name }}
 
-A `multispace_run` manages the initialization and destruction of a
-Terraform workspace. This will queue and run an `apply` once (only if no
-other applies have been run) and on destroy will queue and run a `destroy`
-run.
+A `multispace_run` runs one `apply` on creation and one `destroy` on
+destruction. This can be used to enable cascading initialization of
+Terraform workspaces.
 
-The workspace must be created prior to the execution fo this resource,
+The workspace must be created prior to the execution of this resource,
 but it can be created dynamically at Terraform apply-time using the
 [tfe provider](https://registry.terraform.io/providers/hashicorp/tfe/latest).
 
 ~> **Warning!** This will _auto-apply_ a create on creation and a destroy
 on destruction. You should be very careful about what is allowed to trigger
 this resource and when.
+
+## Existing Workspaces
+
+If you use a `multispace_run` on a workspace that already exist and has
+had a successful apply, `multispace_run` will queue _another_ apply. This
+provider expects to "own" exactly one apply. Therefore, be careful if
+using this with existing Terraform workspaces.
+
+A future version of this provider will change this default to skip
+if the last created state version was from a non-destroy run. The current
+version **does not do this.**
 
 ## Example Usage: Cascading Workspaces
 
