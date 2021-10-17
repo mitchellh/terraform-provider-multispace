@@ -14,6 +14,14 @@ my personal time for personal use cases.
 
 ## Features
 
+  * Cascading create/destroy of multiple Terraform workspaces in
+    dependency order.
+
+  * Automatic retry of failed plans or applies within a workspace.
+
+  * Optionally wait for a human to manually confirm a plan for one or
+    more workspaces before continuing.
+
 ## Usage
 
 The example below cascades applies and destroys across multiple workspaces.
