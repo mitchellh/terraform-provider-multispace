@@ -118,7 +118,7 @@ resource "multispace_run" "root" {
 ### Optional
 
 - **id** (String) The ID of this resource.
-- **manual_confirm** (Boolean) If true, a human will have to manually confirm a plan to start the apply. This requires a human to carefully watch the execution of this Terraform run and hit the 'confirm' button. Be aware of resource timeouts during the Terraform run.
+- **manual_confirm** (Boolean) If true, a human will have to manually confirm a plan to start the apply. This applies to the creation only. Destroy never requires manual confirmation. This requires a human to carefully watch the execution of this Terraform run and hit the 'confirm' button. Be aware of resource timeouts during the Terraform run.
 - **retry** (Boolean) Whether or not to retry on plan or apply errors.
 - **retry_attempts** (Number) The number of retry attempts made for any errors during plan or apply. This applies to both creation and destruction.
 - **retry_backoff_max** (Number) The maximum seconds to wait between retry attempts. Retries are done using an exponential backoff, so this can be used to limit the maximum time between retries.
