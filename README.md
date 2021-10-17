@@ -41,27 +41,35 @@ my initial environments and subsequently tear them down.
 resource "multispace_run" "root" {
   # Use string workspace names here and not data sources so that
   # you can define the multispace runs before the workspace even exists.
-  workspace = "tfc"
+  workspace    = "tfc"
+  organization = "my-org"
 }
 
 resource "multispace_run" "physical" {
-  workspace = "k8s-physical"
-  depends_on = [multispace_run.root]
+  organization = "my-org"
+  workspace    = "k8s-physical"
+  depends_on   = [multispace_run.root]
+
+  retry = false
 }
 
 resource "multispace_run" "core" {
-  workspace = "k8s-core"
-  depends_on = [multispace_run.physical]
+  organization = "my-org"
+  workspace    = "k8s-core"
+  depends_on   = [multispace_run.physical]
 }
 
 resource "multispace_run" "dns" {
-  workspace = "dns"
-  depends_on = [multispace_run.root]
+  organization = "my-org"
+  workspace    = "dns"
+  depends_on   = [multispace_run.root]
+  manual_confirm = true
 }
 
 resource "multispace_run" "ingress" {
-  workspace = "ingress"
-  depends_on = [multispace_run.core, multispace_run.dns]
+  organization = "my-org"
+  workspace    = "ingress"
+  depends_on   = [multispace_run.core, multispace_run.dns]
 }
 ```
 
