@@ -35,6 +35,13 @@ func resourceRun() *schema.Resource {
 				ForceNew:    true,
 			},
 
+			"manual_confirm": {
+				Description: runDescriptions["manual_confirm"],
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+
 			"retry": {
 				Description: runDescriptions["retry"],
 				Type:        schema.TypeBool,
@@ -202,18 +209,28 @@ RETRY:
 		return nil
 	}
 
-	// Apply the plan.
-	// NOTE(mitchellh): The reason I don't just autoapply above is because
-	// in the future it'd be nice to make an option that pauses for certain
-	// workspaces so they can be verified manually.
-	log.Printf("[INFO] plan complete, confirming apply. %q", run.ID)
-	if err := client.Runs.Apply(ctx, run.ID, tfe.RunApplyOptions{
-		Comment: tfe.String(fmt.Sprintf(
-			"terraform-provider-multispace on %s",
-			time.Now().Format("Mon Jan 2 15:04:05 MST 2006"),
-		)),
-	}); err != nil {
-		return diag.FromErr(err)
+	// If we're doing a manual confirmation, then we wait for the human to confirm.
+	if d.Get("manual_confirm").(bool) {
+		log.Printf("[INFO] plan complete, waiting for manual confirm. %q", run.ID)
+		run, diags = waitForRun(ctx, client, org, run, ws, true, []tfe.RunStatus{
+			tfe.RunConfirmed,
+			tfe.RunApplyQueued,
+			tfe.RunApplying,
+		}, []tfe.RunStatus{run.Status})
+		if diags != nil {
+			return diags
+		}
+	} else {
+		// Apply the plan.
+		log.Printf("[INFO] plan complete, confirming apply. %q", run.ID)
+		if err := client.Runs.Apply(ctx, run.ID, tfe.RunApplyOptions{
+			Comment: tfe.String(fmt.Sprintf(
+				"terraform-provider-multispace on %s",
+				time.Now().Format("Mon Jan 2 15:04:05 MST 2006"),
+			)),
+		}); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	// Wait now for the apply to complete
@@ -261,7 +278,11 @@ RETRY:
 var runDescriptions = map[string]string{
 	"organization": "The name of the Terraform Cloud organization that owns the workspace.",
 	"workspace":    "The name of the Terraform Cloud workspace to execute.",
-	"retry":        "Whether or not to retry on plan or apply errors.",
+	"manual_confirm": "If true, a human will have to manually confirm a plan " +
+		"to start the apply. This requires a human to carefully watch the execution " +
+		"of this Terraform run and hit the 'confirm' button. Be aware of resource " +
+		"timeouts during the Terraform run.",
+	"retry": "Whether or not to retry on plan or apply errors.",
 	"retry_attempts": "The number of retry attempts made for any errors during " +
 		"plan or apply. This applies to both creation and destruction.",
 	"retry_backoff_min": "The minimum seconds to wait between retry attempts.",

@@ -88,4 +88,23 @@ resource "multispace_run" "root" {
 }
 ```
 
+## Example Usage: Manual Confirmation
+
+You may want to manually confirm the plan or apply of some resources.
+If you specify the `manual_confirm` field to true, then this resource will
+wait for a human to manually confirm the run it queued. This requires a human
+to watch the workspace, review, and confirm the plan within a reasonable
+amount of time.
+
+-> **Be careful of resource timeouts.** It is very possible for Terraform
+to timeout while waiting for confirmation. Please set your timeouts accordingly.
+
+```hcl
+resource "multispace_run" "root" {
+  organization = "my-org"
+  workspace    = "tfc"
+  manual_confirm = true
+}
+```
+
 {{ .SchemaMarkdown | trimspace }}

@@ -14,11 +14,6 @@ my personal time for personal use cases.
 
 ## Features
 
-  * Cascading create/destroy of multiple Terraform workspaces in
-    dependency order.
-
-  * Automatic retry of failed plans or applies within a workspace.
-
 ## Usage
 
 The example below cascades applies and destroys across multiple workspaces.
@@ -103,9 +98,6 @@ The list below has functionality I'd like to add in the future:
   * Only create if there is state, otherwise, assume initialization is done.
     This will allow this provider to be adopted into existing workspace
     trees more easily.
-
-  * Option per resource to wait for a manual plan confirmation. This makes
-    this safer to run.
 
 ## Developing the Provider
 
