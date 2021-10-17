@@ -18,6 +18,7 @@ func resourceRun() *schema.Resource {
 
 		CreateContext: resourceRunCreate,
 		ReadContext:   resourceRunRead,
+		UpdateContext: resourceRunUpdate,
 		DeleteContext: resourceRunDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -99,6 +100,11 @@ func resourceRunRead(ctx context.Context, d *schema.ResourceData, meta interface
 		return diag.FromErr(err)
 	}
 
+	return nil
+}
+
+func resourceRunUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	// Update we do nothing since we should have created during apply.
 	return nil
 }
 

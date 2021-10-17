@@ -28,6 +28,7 @@ resource "multispace_run" "A" {
   organization = "multispace-test"
   workspace    = "A"
   depends_on   = [multispace_run.root]
+  manual_confirm = true
 }
 
 resource "multispace_run" "B" {
