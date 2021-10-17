@@ -22,15 +22,17 @@ func resourceRun() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"organization": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: runDescriptions["organization"],
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 
 			"workspace": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: runDescriptions["workspace"],
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}
@@ -175,4 +177,9 @@ func doRun(
 	}
 
 	return nil
+}
+
+var runDescriptions = map[string]string{
+	"organization": "The name of the Terraform Cloud organization that owns the workspace.",
+	"workspace":    "The name of the Terraform Cloud workspace to execute.",
 }

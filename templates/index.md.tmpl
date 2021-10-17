@@ -36,7 +36,7 @@ lifecycle today. The steady-state modification workflow uses the standard
 Terraform Cloud VCS-driven workflows. This provider just helps me stand up
 my initial environments and subsequently tear them down.
 
-```terraform
+```hcl
 resource "multispace_run" "root" {
   # Use string workspace names here and not data sources so that
   # you can define the multispace runs before the workspace even exists.
