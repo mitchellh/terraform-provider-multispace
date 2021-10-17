@@ -121,12 +121,6 @@ func doRun(
 		return diags
 	}
 
-	// If the plan has no changes, then we're done.
-	if !run.HasChanges || run.Status == tfe.RunPlannedAndFinished {
-		log.Printf("[INFO] plan finished, no changes")
-		return nil
-	}
-
 	// If the run errored, we should have exited already but lets just exit now.
 	if run.Status == tfe.RunErrored {
 		// Clear the ID, we didn't create anything.
@@ -136,6 +130,12 @@ func doRun(
 			"Run %q errored during plan. Please open the web UI to view the error",
 			run.ID,
 		)
+	}
+
+	// If the plan has no changes, then we're done.
+	if !run.HasChanges || run.Status == tfe.RunPlannedAndFinished {
+		log.Printf("[INFO] plan finished, no changes")
+		return nil
 	}
 
 	// Apply the plan.
@@ -173,6 +173,16 @@ func doRun(
 		return diag.Errorf(
 			"Run %q errored during apply. Please open the web UI to view the error",
 			run.ID,
+		)
+	}
+
+	// If this is not applied, we're in some unexpected state.
+	if run.Status != tfe.RunApplied {
+		setId("")
+
+		return diag.Errorf(
+			"Run %q entered unexpected state %q, expected applied",
+			run.ID, run.Status,
 		)
 	}
 
