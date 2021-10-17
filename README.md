@@ -89,10 +89,19 @@ for creation/destruction. For steady-state modifications once an environment
 exists, I use the typical Terraform Cloud VCS-driven workflow (which may or
 may not involve run triggers at that point).
 
-## Requirements
+## Future Functionality
 
--	[Terraform](https://www.terraform.io/downloads.html) >= 0.13.x
--	[Go](https://golang.org/doc/install) >= 1.15
+The list below has functionality I'd like to add in the future:
+
+  * Only create if there is state, otherwise, assume initialization is done.
+    This will allow this provider to be adopted into existing workspace
+    trees more easily.
+
+  * Option per resource to wait for a manual plan confirmation. This makes
+    this safer to run.
+
+  * Automatic run retries. Some Terraform runs are expected to be flaky depending
+    on what provider is used. Let's automatically retry.
 
 ## Developing the Provider
 
