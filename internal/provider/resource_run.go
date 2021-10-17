@@ -216,7 +216,7 @@ RETRY:
 	}
 
 	// If we're doing a manual confirmation, then we wait for the human to confirm.
-	if d.Get("manual_confirm").(bool) {
+	if !destroy && d.Get("manual_confirm").(bool) {
 		log.Printf("[INFO] plan complete, waiting for manual confirm. %q", run.ID)
 		run, diags = waitForRun(ctx, client, org, run, ws, true, []tfe.RunStatus{
 			tfe.RunConfirmed,
@@ -285,7 +285,8 @@ var runDescriptions = map[string]string{
 	"organization": "The name of the Terraform Cloud organization that owns the workspace.",
 	"workspace":    "The name of the Terraform Cloud workspace to execute.",
 	"manual_confirm": "If true, a human will have to manually confirm a plan " +
-		"to start the apply. This requires a human to carefully watch the execution " +
+		"to start the apply. This applies to the creation only. Destroy never " +
+		"requires manual confirmation. This requires a human to carefully watch the execution " +
 		"of this Terraform run and hit the 'confirm' button. Be aware of resource " +
 		"timeouts during the Terraform run.",
 	"retry": "Whether or not to retry on plan or apply errors.",
