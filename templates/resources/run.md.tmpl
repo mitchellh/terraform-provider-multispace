@@ -30,6 +30,13 @@ A future version of this provider will change this default to skip
 if the last created state version was from a non-destroy run. The current
 version **does not do this.**
 
+## Timeouts
+
+Workspace creation can take a long time. The default timeouts for the
+create and destroy of a workspace is set to 15 minutes. This can be
+customized using the
+[resource timeouts configuration](https://www.terraform.io/docs/language/resources/syntax.html#operation-timeouts).
+
 ## Example Usage: Cascading Workspaces
 
 ```hcl

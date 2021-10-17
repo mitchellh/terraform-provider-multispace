@@ -30,6 +30,13 @@ A future version of this provider will change this default to skip
 if the last created state version was from a non-destroy run. The current
 version **does not do this.**
 
+## Timeouts
+
+Workspace creation can take a long time. The default timeouts for the
+create and destroy of a workspace is set to 15 minutes. This can be
+customized using the
+[resource timeouts configuration](https://www.terraform.io/docs/language/resources/syntax.html#operation-timeouts).
+
 ## Example Usage: Cascading Workspaces
 
 ```hcl
@@ -92,3 +99,16 @@ resource "multispace_run" "root" {
 ### Optional
 
 - **id** (String) The ID of this resource.
+- **retry** (Boolean) Whether or not to retry on plan or apply errors.
+- **retry_attempts** (Number) The number of retry attempts made for any errors during plan or apply. This applies to both creation and destruction.
+- **retry_backoff_max** (Number) The maximum seconds to wait between retry attempts. Retries are done using an exponential backoff, so this can be used to limit the maximum time between retries.
+- **retry_backoff_min** (Number) The minimum seconds to wait between retry attempts.
+- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- **create** (String)
+- **delete** (String)

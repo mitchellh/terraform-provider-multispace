@@ -63,6 +63,11 @@ func resourceRun() *schema.Resource {
 				Default:     30,
 			},
 		},
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(15 * time.Minute),
+			Delete: schema.DefaultTimeout(15 * time.Minute),
+		},
 	}
 }
 
