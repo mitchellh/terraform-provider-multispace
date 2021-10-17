@@ -22,6 +22,22 @@ my personal time for personal use cases.
   * Optionally wait for a human to manually confirm a plan for one or
     more workspaces before continuing.
 
+## Installation
+
+See the installation instructions [on the Terraform Registry](https://registry.terraform.io/providers/mitchellh/multispace/latest). Generally, add the `mitchellh/multispace`
+provider to your `required_providers` block and run `terraform init`:
+
+```hcl
+terraform {
+  required_providers {
+    multispace = {
+      source = "mitchellh/multispace"
+      version = "<VERSION HERE>"
+    }
+  }
+}
+```
+
 ## Usage
 
 The example below cascades applies and destroys across multiple workspaces.
@@ -37,7 +53,7 @@ lifecycle today. The steady-state modification workflow uses the standard
 Terraform Cloud VCS-driven workflows. This provider just helps me stand up
 my initial environments and subsequently tear them down.
 
-```terraform
+```hcl
 resource "multispace_run" "root" {
   # Use string workspace names here and not data sources so that
   # you can define the multispace runs before the workspace even exists.
