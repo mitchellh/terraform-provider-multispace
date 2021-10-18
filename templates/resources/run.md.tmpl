@@ -17,7 +17,9 @@ but it can be created dynamically at Terraform apply-time using the
 
 ~> **Warning!** This will _auto-apply_ a create on creation and a destroy
 on destruction. You should be very careful about what is allowed to trigger
-this resource and when.
+this resource and when. Note that while I use the term "auto-apply", the
+[auto-apply workspace setting](https://www.terraform.io/docs/cloud/workspaces/settings.html#auto-apply-and-manual-apply)
+_does NOT_ need to be enabled and is unused by this provider.
 
 ## Existing Workspaces
 
