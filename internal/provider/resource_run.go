@@ -184,10 +184,16 @@ RETRY:
 		tfe.RunPlanned,
 		tfe.RunPlannedAndFinished,
 		tfe.RunErrored,
+		tfe.RunCostEstimated,
+		tfe.RunPolicyChecked,
+		tfe.RunPolicyOverride,
+		tfe.RunPolicySoftFailed,
 	}, []tfe.RunStatus{
 		tfe.RunPending,
 		tfe.RunPlanQueued,
 		tfe.RunPlanning,
+		tfe.RunCostEstimating,
+		tfe.RunPolicyChecking,
 	})
 	if diags != nil {
 		return diags
