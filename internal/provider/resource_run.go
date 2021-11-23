@@ -174,10 +174,28 @@ RETRY:
 		AutoApply: tfe.Bool(false),
 	})
 
-	// The ID we use is the run we queue. We can use this to look this
-	// run up again in the case of a partial failure.
-	setId(run.ID)
-	log.Printf("[INFO] run created: %s", run.ID)
+	// I THINK if err != nil implies run == nil but we can never be too sure.
+	// If we have a non-nil run, we want to save the ID so we don't dangle
+	// resources.
+	if run != nil {
+		// The ID we use is the run we queue. We can use this to look this
+		// run up again in the case of a partial failure.
+		setId(run.ID)
+		log.Printf("[INFO] run created: %s", run.ID)
+	}
+
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// If we reach this point and run is nil, there is a bug in the TFE
+	// API client. But its non-sensical and we can't continue so we must exit.
+	if run == nil {
+		log.Printf("[ERROR] TFE client returned err nil but also run nil")
+		return diag.Errorf(
+			"INTERNAL ERROR: run create API did not error, but also did not " +
+				"return a run ID.")
+	}
 
 	// Wait for the plan to complete.
 	run, diags := waitForRun(ctx, client, org, run, ws, true, []tfe.RunStatus{
