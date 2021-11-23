@@ -225,7 +225,9 @@ RETRY:
 	if run.Status == tfe.RunPolicyOverride {
 		log.Printf("[INFO] policy check soft-failed, waiting for manual override. %q", run.ID)
 		run, diags = waitForRun(ctx, client, org, run, ws, true, []tfe.RunStatus{
-			tfe.RunPolicyOverride,
+			tfe.RunConfirmed,
+			tfe.RunApplyQueued,
+			tfe.RunApplying,
 		}, []tfe.RunStatus{run.Status})
 		if diags != nil {
 			return diags
