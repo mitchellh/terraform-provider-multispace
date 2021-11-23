@@ -184,17 +184,23 @@ RETRY:
 		tfe.RunPlanned,
 		tfe.RunPlannedAndFinished,
 		tfe.RunErrored,
+		tfe.RunCostEstimated,
+		tfe.RunPolicyChecked,
+		tfe.RunPolicySoftFailed,
+		tfe.RunPolicyOverride,
 	}, []tfe.RunStatus{
 		tfe.RunPending,
 		tfe.RunPlanQueued,
 		tfe.RunPlanning,
+		tfe.RunCostEstimating,
+		tfe.RunPolicyChecking,
 	})
 	if diags != nil {
 		return diags
 	}
 
 	// If the run errored, we should have exited already but lets just exit now.
-	if run.Status == tfe.RunErrored {
+	if run.Status == tfe.RunErrored || run.Status == tfe.RunPolicySoftFailed {
 		// Clear the ID, we didn't create anything.
 		setId("")
 
@@ -213,6 +219,19 @@ RETRY:
 	if !run.HasChanges || run.Status == tfe.RunPlannedAndFinished {
 		log.Printf("[INFO] plan finished, no changes")
 		return nil
+	}
+
+	// If a policy soft-fails, we need human approval before we continue
+	if run.Status == tfe.RunPolicyOverride {
+		log.Printf("[INFO] policy check soft-failed, waiting for manual override. %q", run.ID)
+		run, diags = waitForRun(ctx, client, org, run, ws, true, []tfe.RunStatus{
+			tfe.RunConfirmed,
+			tfe.RunApplyQueued,
+			tfe.RunApplying,
+		}, []tfe.RunStatus{run.Status})
+		if diags != nil {
+			return diags
+		}
 	}
 
 	// If we're doing a manual confirmation, then we wait for the human to confirm.
