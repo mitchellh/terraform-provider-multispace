@@ -187,6 +187,7 @@ RETRY:
 		tfe.RunCostEstimated,
 		tfe.RunPolicyChecked,
 		tfe.RunPolicySoftFailed,
+		tfe.RunPolicyOverride,
 	}, []tfe.RunStatus{
 		tfe.RunPending,
 		tfe.RunPlanQueued,
@@ -199,7 +200,7 @@ RETRY:
 	}
 
 	// If the run errored, we should have exited already but lets just exit now.
-	if run.Status == tfe.RunErrored {
+	if run.Status == tfe.RunErrored || run.Status == tfe.RunPolicySoftFailed {
 		// Clear the ID, we didn't create anything.
 		setId("")
 
@@ -221,7 +222,7 @@ RETRY:
 	}
 
 	// If a policy soft-fails, we need human approval before we continue
-	if run.Status == tfe.RunPolicySoftFailed {
+	if run.Status == tfe.RunPolicyOverride {
 		log.Printf("[INFO] policy check soft-failed, waiting for manual override. %q", run.ID)
 		run, diags = waitForRun(ctx, client, org, run, ws, true, []tfe.RunStatus{
 			tfe.RunPolicyOverride,
