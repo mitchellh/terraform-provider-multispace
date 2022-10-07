@@ -78,8 +78,12 @@ func waitForRun(
 			}
 		}
 		if !found {
-			log.Printf("[DEBUG] non-progressive state, exiting %q", r.Status)
-			return r, nil
+			if r.Actions.IsConfirmable {
+				log.Printf("[DEBUG] non-progressive is-confirmable state, exiting %q", r.Status)
+				return r, nil
+			}
+
+			log.Printf("[DEBUG] non-progressive state, waiting %q", r.Status)
 		}
 
 		// Check if 30 seconds have passed since the last update.
