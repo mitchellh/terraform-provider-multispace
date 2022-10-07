@@ -70,6 +70,20 @@ func resourceRun() *schema.Resource {
 				Optional:    true,
 				Default:     30,
 			},
+
+			"wait_for_apply": {
+				Description: runDescriptions["wait_for_apply"],
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
+
+			"wait_for_destroy": {
+				Description: runDescriptions["wait_for_destroy"],
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -197,122 +211,130 @@ RETRY:
 				"return a run ID.")
 	}
 
-	// Wait for the plan to complete.
-	run, diags := waitForRun(ctx, client, org, run, ws, true, []tfe.RunStatus{
-		tfe.RunPlanned,
-		tfe.RunPlannedAndFinished,
-		tfe.RunErrored,
-		tfe.RunCostEstimated,
-		tfe.RunPolicyChecked,
-		tfe.RunPolicySoftFailed,
-		tfe.RunPolicyOverride,
-	}, []tfe.RunStatus{
-		tfe.RunPending,
-		tfe.RunPlanQueued,
-		tfe.RunPlanning,
-		tfe.RunCostEstimating,
-		tfe.RunPolicyChecking,
-	})
-	if diags != nil {
-		return diags
+	// Get our wait information
+	waitForApply := d.Get("wait_for_apply").(bool)
+	if destroy {
+		waitForApply = d.Get("wait_for_destroy").(bool)
 	}
 
-	// If the run errored, we should have exited already but lets just exit now.
-	if run.Status == tfe.RunErrored || run.Status == tfe.RunPolicySoftFailed {
-		// Clear the ID, we didn't create anything.
-		setId("")
-
-		if retry {
-			// Retry
-			goto RETRY
-		}
-
-		return diag.Errorf(
-			"Run %q errored during plan. Please open the web UI to view the error",
-			run.ID,
-		)
-	}
-
-	// If the plan has no changes, then we're done.
-	if !run.HasChanges || run.Status == tfe.RunPlannedAndFinished {
-		log.Printf("[INFO] plan finished, no changes")
-		return nil
-	}
-
-	// If a policy soft-fails, we need human approval before we continue
-	if run.Status == tfe.RunPolicyOverride {
-		log.Printf("[INFO] policy check soft-failed, waiting for manual override. %q", run.ID)
-		run, diags = waitForRun(ctx, client, org, run, ws, true, []tfe.RunStatus{
-			tfe.RunConfirmed,
-			tfe.RunApplyQueued,
-			tfe.RunApplying,
-		}, []tfe.RunStatus{run.Status})
+	if waitForApply {
+		// Wait for the plan to complete.
+		run, diags := waitForRun(ctx, client, org, run, ws, true, []tfe.RunStatus{
+			tfe.RunPlanned,
+			tfe.RunPlannedAndFinished,
+			tfe.RunErrored,
+			tfe.RunCostEstimated,
+			tfe.RunPolicyChecked,
+			tfe.RunPolicySoftFailed,
+			tfe.RunPolicyOverride,
+		}, []tfe.RunStatus{
+			tfe.RunPending,
+			tfe.RunPlanQueued,
+			tfe.RunPlanning,
+			tfe.RunCostEstimating,
+			tfe.RunPolicyChecking,
+		})
 		if diags != nil {
 			return diags
 		}
-	}
 
-	// If we're doing a manual confirmation, then we wait for the human to confirm.
-	if !destroy && d.Get("manual_confirm").(bool) {
-		log.Printf("[INFO] plan complete, waiting for manual confirm. %q", run.ID)
-		run, diags = waitForRun(ctx, client, org, run, ws, true, []tfe.RunStatus{
+		// If the run errored, we should have exited already but lets just exit now.
+		if run.Status == tfe.RunErrored || run.Status == tfe.RunPolicySoftFailed {
+			// Clear the ID, we didn't create anything.
+			setId("")
+
+			if retry {
+				// Retry
+				goto RETRY
+			}
+
+			return diag.Errorf(
+				"Run %q errored during plan. Please open the web UI to view the error",
+				run.ID,
+			)
+		}
+
+		// If the plan has no changes, then we're done.
+		if !run.HasChanges || run.Status == tfe.RunPlannedAndFinished {
+			log.Printf("[INFO] plan finished, no changes")
+			return nil
+		}
+
+		// If a policy soft-fails, we need human approval before we continue
+		if run.Status == tfe.RunPolicyOverride {
+			log.Printf("[INFO] policy check soft-failed, waiting for manual override. %q", run.ID)
+			run, diags = waitForRun(ctx, client, org, run, ws, true, []tfe.RunStatus{
+				tfe.RunConfirmed,
+				tfe.RunApplyQueued,
+				tfe.RunApplying,
+			}, []tfe.RunStatus{run.Status})
+			if diags != nil {
+				return diags
+			}
+		}
+
+		// If we're doing a manual confirmation, then we wait for the human to confirm.
+		if !destroy && d.Get("manual_confirm").(bool) {
+			log.Printf("[INFO] plan complete, waiting for manual confirm. %q", run.ID)
+			run, diags = waitForRun(ctx, client, org, run, ws, true, []tfe.RunStatus{
+				tfe.RunConfirmed,
+				tfe.RunApplyQueued,
+				tfe.RunApplying,
+			}, []tfe.RunStatus{run.Status})
+			if diags != nil {
+				return diags
+			}
+		} else {
+			// Apply the plan.
+			log.Printf("[INFO] plan complete, confirming apply. %q", run.ID)
+			if err := client.Runs.Apply(ctx, run.ID, tfe.RunApplyOptions{
+				Comment: tfe.String(fmt.Sprintf(
+					"terraform-provider-multispace on %s",
+					time.Now().Format("Mon Jan 2 15:04:05 MST 2006"),
+				)),
+			}); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+
+		// Wait now for the apply to complete
+		run, diags = waitForRun(ctx, client, org, run, ws, false, []tfe.RunStatus{
+			tfe.RunApplied,
+			tfe.RunErrored,
+		}, []tfe.RunStatus{
 			tfe.RunConfirmed,
 			tfe.RunApplyQueued,
 			tfe.RunApplying,
-		}, []tfe.RunStatus{run.Status})
+		})
 		if diags != nil {
 			return diags
 		}
-	} else {
-		// Apply the plan.
-		log.Printf("[INFO] plan complete, confirming apply. %q", run.ID)
-		if err := client.Runs.Apply(ctx, run.ID, tfe.RunApplyOptions{
-			Comment: tfe.String(fmt.Sprintf(
-				"terraform-provider-multispace on %s",
-				time.Now().Format("Mon Jan 2 15:04:05 MST 2006"),
-			)),
-		}); err != nil {
-			return diag.FromErr(err)
-		}
-	}
 
-	// Wait now for the apply to complete
-	run, diags = waitForRun(ctx, client, org, run, ws, false, []tfe.RunStatus{
-		tfe.RunApplied,
-		tfe.RunErrored,
-	}, []tfe.RunStatus{
-		tfe.RunConfirmed,
-		tfe.RunApplyQueued,
-		tfe.RunApplying,
-	})
-	if diags != nil {
-		return diags
-	}
+		// If the run errored, we should have exited already but lets just exit now.
+		if run.Status == tfe.RunErrored {
+			// Clear the ID, we didn't create anything.
+			setId("")
 
-	// If the run errored, we should have exited already but lets just exit now.
-	if run.Status == tfe.RunErrored {
-		// Clear the ID, we didn't create anything.
-		setId("")
+			if retry {
+				// Retry
+				goto RETRY
+			}
 
-		if retry {
-			// Retry
-			goto RETRY
+			return diag.Errorf(
+				"Run %q errored during apply. Please open the web UI to view the error",
+				run.ID,
+			)
 		}
 
-		return diag.Errorf(
-			"Run %q errored during apply. Please open the web UI to view the error",
-			run.ID,
-		)
-	}
+		// If this is not applied, we're in some unexpected state.
+		if run.Status != tfe.RunApplied {
+			setId("")
 
-	// If this is not applied, we're in some unexpected state.
-	if run.Status != tfe.RunApplied {
-		setId("")
-
-		return diag.Errorf(
-			"Run %q entered unexpected state %q, expected applied",
-			run.ID, run.Status,
-		)
+			return diag.Errorf(
+				"Run %q entered unexpected state %q, expected applied",
+				run.ID, run.Status,
+			)
+		}
 	}
 
 	return nil
@@ -333,4 +355,8 @@ var runDescriptions = map[string]string{
 	"retry_backoff_max": "The maximum seconds to wait between retry attempts. Retries " +
 		"are done using an exponential backoff, so this can be used to limit " +
 		"the maximum time between retries.",
+	"wait_for_apply": "Whether or not to wait for the Apply to succeed before " +
+		"considering the resource created",
+	"wait_for_destroy": "Whether or not to wait for the Destroy to succeed before " +
+		"considering the resource destroyed",
 }
