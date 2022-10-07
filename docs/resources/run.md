@@ -119,6 +119,8 @@ resource "multispace_run" "root" {
 
 ### Optional
 
+- **do_apply** (Boolean) Whether or not to trigger an Apply run when creating the resource. For example, if you wish to ensure that Terraform triggers a destroy on all your workspaces, before deleting them, but you wish to kick off your first apply manually
+- **do_destroy** (Boolean) Whether or not to trigger a Destroy run when destroying the resource. For example, if destroying some workspaces is unnecessary
 - **id** (String) The ID of this resource.
 - **manual_confirm** (Boolean) If true, a human will have to manually confirm a plan to start the apply. This applies to the creation only. Destroy never requires manual confirmation. This requires a human to carefully watch the execution of this Terraform run and hit the 'confirm' button. Be aware of resource timeouts during the Terraform run.
 - **retry** (Boolean) Whether or not to retry on plan or apply errors.
@@ -126,6 +128,8 @@ resource "multispace_run" "root" {
 - **retry_backoff_max** (Number) The maximum seconds to wait between retry attempts. Retries are done using an exponential backoff, so this can be used to limit the maximum time between retries.
 - **retry_backoff_min** (Number) The minimum seconds to wait between retry attempts.
 - **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- **wait_for_apply** (Boolean) Whether or not to wait for the Apply to succeed before considering the resource created
+- **wait_for_destroy** (Boolean) Whether or not to wait for the Destroy to succeed before considering the resource destroyed
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
