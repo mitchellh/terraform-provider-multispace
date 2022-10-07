@@ -214,18 +214,29 @@ RETRY:
 		return diag.FromErr(err)
 	}
 
-	// Create a run
-	run, err := client.Runs.Create(ctx, tfe.RunCreateOptions{
+	// Get our wait information
+	waitForApply := d.Get("wait_for_apply").(bool)
+	if destroy {
+		waitForApply = d.Get("wait_for_destroy").(bool)
+	}
+
+	runOptions := tfe.RunCreateOptions{
 		Message: tfe.String(fmt.Sprintf(
 			"terraform-provider-multispace on %s",
 			time.Now().Format("Mon Jan 2 15:04:05 MST 2006"),
 		)),
 		Workspace: ws,
 		IsDestroy: tfe.Bool(destroy),
+	}
+	if waitForApply {
+		// Do auto-apply because we handle all that.
+		runOptions.AutoApply = tfe.Bool(false)
+		// Unless this is a fire-and-forget Apply, in which case, do the
+		// workspace default behaviour
+	}
 
-		// Never auto-apply because we handle all that.
-		AutoApply: tfe.Bool(false),
-	})
+	// Create a run
+	run, err := client.Runs.Create(ctx, runOptions)
 
 	// I THINK if err != nil implies run == nil but we can never be too sure.
 	// If we have a non-nil run, we want to save the ID so we don't dangle
@@ -248,12 +259,6 @@ RETRY:
 		return diag.Errorf(
 			"INTERNAL ERROR: run create API did not error, but also did not " +
 				"return a run ID.")
-	}
-
-	// Get our wait information
-	waitForApply := d.Get("wait_for_apply").(bool)
-	if destroy {
-		waitForApply = d.Get("wait_for_destroy").(bool)
 	}
 
 	if waitForApply {
