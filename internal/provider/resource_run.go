@@ -71,6 +71,20 @@ func resourceRun() *schema.Resource {
 				Default:     30,
 			},
 
+			"do_apply": {
+				Description: runDescriptions["do_apply"],
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
+
+			"do_destroy": {
+				Description: runDescriptions["do_destroy"],
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+			},
+
 			"wait_for_apply": {
 				Description: runDescriptions["wait_for_apply"],
 				Type:        schema.TypeBool,
@@ -94,10 +108,28 @@ func resourceRun() *schema.Resource {
 }
 
 func resourceRunCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+
+	// If we are just using multispace_run to ensure destroys are triggered
+	doApply := d.Get("do_apply").(bool)
+	if !doApply {
+		d.SetId("no-op")
+		return nil
+	}
+	// Otherwise, proceed as normal
+
 	return doRun(ctx, d, meta, false)
 }
 
 func resourceRunRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+
+	// If we are just using multispace_run to ensure destroys are triggered
+	doApply := d.Get("do_apply").(bool)
+	if !doApply {
+		d.SetId("no-op")
+		return nil
+	}
+	// Otherwise, proceed as normal
+
 	client := meta.(*tfe.Client)
 	id := d.Id()
 
@@ -123,6 +155,13 @@ func resourceRunUpdate(ctx context.Context, d *schema.ResourceData, meta interfa
 }
 
 func resourceRunDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	// If we are just using multispace_run to ensure destroys are triggered
+	doDestroy := d.Get("do_destroy").(bool)
+	if !doDestroy {
+		return nil
+	}
+	// Otherwise, proceed as normal
+
 	return doRun(ctx, d, meta, true)
 }
 
@@ -359,4 +398,9 @@ var runDescriptions = map[string]string{
 		"considering the resource created",
 	"wait_for_destroy": "Whether or not to wait for the Destroy to succeed before " +
 		"considering the resource destroyed",
+	"do_apply": "Whether or not to trigger an Apply run when creating the resource. " +
+		"For example, if you wish to ensure that Terraform triggers a destroy on all your " +
+		"workspaces, before deleting them, but you wish to kick off your first apply manually",
+	"do_destroy": "Whether or not to trigger a Destroy run when destroying the resource. " +
+		"For example, if destroying some workspaces is unnecessary",
 }
